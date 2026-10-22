@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FlashFeed</title>
+<style>
+:root{--bg:#f6f7f9;--cd:#fff;--tx:#14171a;--mu:#5b6470;--ac:#e10600;--bd:#e3e6ea;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1116;--cd:#171b22;--tx:#eef1f5;--mu:#9aa4b2;--bd:#262c36;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1116;--cd:#171b22;--tx:#eef1f5;--mu:#9aa4b2;--bd:#262c36;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px}
+h1{margin:0;font-size:24px}.mu{color:var(--mu);font-size:13px}
+nav{display:flex;gap:8px;margin:12px 0}
+button,select,input,textarea{font:inherit;color:var(--tx);background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;max-width:100%}
+button{cursor:pointer}button.on,#go,#pg{background:var(--ac);border-color:var(--ac);color:#fff}
+button:disabled{opacity:.5}
+textarea,input{width:100%;box-sizing:border-box}textarea{min-height:64px;resize:vertical}
+.cd{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.row{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}.row select{flex:1}
+.p{display:flex;gap:10px}.av{flex:none;width:36px;height:36px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600}
+.b{min-width:0}.nm{font-weight:600}.tag{font-size:11px;border:1px solid var(--bd);border-radius:6px;padding:0 5px;color:var(--mu);margin-left:4px}
+.rp{margin:10px 0 0 18px;padding-left:12px;border-left:2px solid var(--bd);display:grid;gap:10px}
+.tx{white-space:pre-wrap;overflow-wrap:anywhere}
+#out{white-space:pre-wrap;overflow-wrap:anywhere}
+</style></head><body><main>
+<h1>⚡ FlashFeed</h1>
+<div class="mu">The ECGB’s social network. Every account except you is an AI character, and AI accounts are always tagged.</div>
+<nav><button id="tf" class="on">Feed</button><button id="tp">Press room</button></nav>
+<section id="feed">
+<div class="cd"><textarea id="in" placeholder="What’s happening in the paddock?"></textarea>
+<div class="row"><select id="as"><option value="fan">Post as: you (human fan)</option><option value="ecgb">Post as: ECGB Official (announce a story event)</option></select><button id="go">Post</button></div>
+<div id="st" class="mu"></div></div>
+<div id="list"></div></section>
+<section id="press" hidden><div class="cd"><div class="row" style="margin-top:0"><select id="dr"></select></div>
+<div class="row"><input id="tp2" placeholder="Topic, e.g. the Madrid Grand Prix crash"></div>
+<div class="row"><button id="pg">Generate press conference</button></div><div id="ps" class="mu"></div></div>
+<div class="cd" id="out" hidden></div></section>
+<script>
+const TEAMS={"Curb Velocity":"witty, social-media-savvy, plays up the driver contrast","Sterling GP":"polished, corporate, proud of its young talent pipeline","Crimson Speed":"cocky, combative, treats its star as the main event","Cavallo Rosso":"dramatic, passionate, heritage and emotion","Kingsley Racing":"wholesome, humble, celebrates every point","Velocity Point":"chaotic meme account, least filtered team","Emerald GP":"ambitious, image-conscious, leans on veteran experience","Ironclad Motorsport":"scrappy, no-nonsense underdog with a chip","Aquila Racing":"precise, engineering-minded, quietly proud of its own engine","Aurora Formula":"stylish, slightly artsy, enthusiastic","Summit GP":"dry, understated, self-aware about midfield life","Atlas Racing":"earnest, heritage-proud, a bit theatrical","Mercer Motors":"hopeful underdog warmth built around Leonard Mercer, nervous about the switch to Aquila Technik engines"};
+const DR=[["Lucas North","Curb Velocity","self-deprecating, meme-fluent, jokes cover perfectionist anxiety, posts often"],["Oliver Pascal","Curb Velocity","calm, deadpan, clinical, rare short dry one-liners"],["Graham Rowe","Sterling GP","polished, articulate, diplomatic, slightly stiff, hidden competitive streak"],["Matteo Rinaldi","Sterling GP","young prodigy, earnest, excitable, occasionally overconfident, exclamation marks"],["Marcus Veyron","Crimson Speed","blunt, unfiltered, ruthlessly confident, brief, trolls rivals"],["Noam Kessler","Crimson Speed","hungry, fiery, emotional, impulsive replies"],["Lucien Carrel","Cavallo Rosso","romantic, sensitive, loves fans, apologises publicly after mistakes"],["Viktor Lehmann","Cavallo Rosso","thoughtful veteran mentor, long considered posts, cares about causes beyond racing"],["Marco Ibarra","Kingsley Racing","smooth, affable, strategic, thanks everyone, never burns bridges"],["Jonas Feldt","Kingsley Racing","humble, warm, wholesome underdog, credits team constantly"],["Callum Reed","Velocity Point","cheeky prankster, bruised ego underneath, sharp when overlooked"],["Soren Falk","Velocity Point","chaotic, raw radio-rant energy, then suddenly sweet, meme material"],["Diego Navarro","Emerald GP","sardonic intense veteran, holds grudges, cryptic paddock-politics hints"],["Miles Harrington","Emerald GP","guarded, defensive, prickly, short posts, quietly hard-working"],["Sebastian Orell","Ironclad Motorsport","terse, formal, facts only, rivalry-prone, slow to warm"],["Owen Barrett","Ironclad Motorsport","cool, understated, steady, just doing his job"],["Lafayette Holzer","Aquila Racing","dry-witted journeyman, self-aware about never winning, reliable and funny"],["Rafael Mendez","Aquila Racing","confident cheerful rookie, direct, ambitious, proud of his roots"],["Pascal Gervais","Aurora Formula","resilient, blunt, banter-heavy, chip about past setbacks"],["Mateo Colón","Aurora Formula","exuberant, passionate, loud national pride, extravagant, fan-engaged"],["Santiago Fereda","Summit GP","warm, sly, handles criticism with humour, fans stress-meme him"],["Salter Koski","Summit GP","ultra-dry, laconic, deadpan, posts off-track hobbies"],["Elliot Crane","Atlas Racing","earnest, sweet, defensive about crashes, focused on improving"],["Adriano Vale","Atlas Racing","theatrical, proud, old-school, talks heritage and passion"],["Leonard Mercer","Mercer Motors","middle-aged, self-deprecating, hopeful, hard-working, never gives up, shrugs and hopes for the best, credits the team, thanks fans"],["Ethan Cross","Mercer Motors","rookie, adaptable, reads the room, knows when to talk and when not to; short, selective, silent on heated topics"]];
+const FANS=[["LapGapLarry","stats nerd, lap-time gaps and tyre-degradation numbers"],["DoomerDaisy","predicts disaster for her own team every race"],["MemeMachineMo","reaction-image jokes, in-jokes especially about Falk and Fereda"],["LoyalLena","team loyalist, defends her driver in every thread"],["RivalRex","rival-fan troll baiting opposing fanbases"],["RiggedRon","convinced every steward decision is rigged"],["NewbieNina","casual newcomer asking basic questions"],["PaddockPundit","journalist-pundit, hot takes and press-room summaries"]];
+const tn=Object.keys(TEAMS),A=[];
+DR.forEach(([n,t,v])=>A.push({h:n.replace(/ /g,""),n,k:"Driver · "+t,v,c:tn.indexOf(t)}));
+tn.forEach((t,i)=>A.push({h:t.replace(/ /g,""),n:t,k:"Team",v:TEAMS[t],c:i}));
+A.push({h:"ECGBOfficial",n:"ECGB Official",k:"Series",v:"formal press-release voice: calendar, penalties, steward decisions, standings; very occasional dry humour; never takes sides",c:5});
+FANS.forEach(([n,v],i)=>A.push({h:n,n,k:"Fan",v,c:i*3+1}));
+const YOU={h:"you",n:"You",k:"Human fan",c:20},by=h=>h==="you"?YOU:A.find(a=>a.h===h);
+const roster=A.map(a=>"@"+a.h+" ("+a.k+"): "+a.v).join("\n");
+const $=i=>document.getElementById(i);let posts=[];
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function item(a,text){const p=el("div","p"),av=el("div","av",a.n[0]);av.style.background="hsl("+a.c*27+" 50% 42%)";
+const b=el("div","b"),h=el("div","nm",a.n);h.append(el("span","tag",a.h==="you"?"Human":"AI"),el("span","mu"," @"+a.h+" · "+a.k));
+b.append(h,el("div","tx",text));p.append(av,b);return p}
+function draw(){const L=$("list");L.textContent="";posts.forEach(p=>{const c=el("div","cd");c.append(item(by(p.h),p.t));
+if(p.r.length){const r=el("div","rp");p.r.forEach(x=>r.append(item(by(x.h),x.t)));c.append(r)}L.append(c)})}
+async function ask(q){const s=await claude.use("sample");if(!s)throw{message:"AI replies need Claude access in this viewer."};return s.json(q,{cache:false})}
+const RULES="You run FlashFeed, a fictional social network for the fictional ECGB racing series from the novel Becoming Elite. Every account below is an AI character. Stay strictly in each account’s voice. Never mention real-world people, teams or events. Do not invent major plot events beyond what the post states.";
+$("go").onclick=async()=>{const t=$("in").value.trim();if(!t)return;const o=$("as").value==="ecgb",p={h:o?"ECGBOfficial":"you",t,r:[]};
+posts.unshift(p);$("in").value="";draw();$("st").textContent="Replies loading…";$("go").disabled=true;
+try{const ctx=posts.slice(1,5).map(q=>"@"+q.h+": "+q.t).join("\n");
+const r=await ask(RULES+"\n\nACCOUNTS:\n"+roster+"\n\nRECENT FEED:\n"+ctx+"\n\nNEW POST by @"+p.h+(o?" (official announcement; treat it as a real event in the story world and have accounts react to it)":" (a real human fan)")+": "+t+"\n\nWrite 4 to 6 replies from different accounts that would plausibly respond. Max 240 characters each. Return ONLY a JSON array: [{\"h\":\"handle without @\",\"t\":\"reply text\"}]");
+p.r=(Array.isArray(r)?r:[]).filter(x=>x&&by(x.h)&&x.h!=="you"&&x.t).slice(0,8);draw();$("st").textContent=p.r.length?"":"No replies this time. Try again."}
+catch(e){$("st").textContent=e.message||"Something went wrong."}$("go").disabled=false};
+DR.forEach(([n])=>{const o=el("option",null,n);o.value=n;$("dr").append(o)});
+$("pg").onclick=async()=>{const n=$("dr").value,t=$("tp2").value.trim()||"the last race",d=DR.find(x=>x[0]===n);
+$("ps").textContent="Writing transcript…";$("pg").disabled=true;
+try{const r=await ask(RULES+"\n\nWrite a short press-conference transcript (6 to 8 exchanges) with "+n+" ("+d[1]+") about: "+t+". Label questions with a fictional outlet, e.g. “Reporter (ECGB Daily):”. "+n+"’s voice: "+d[2]+". Plain text only, no markdown. Return JSON: {\"text\":\"the transcript\"}");
+const o=$("out");o.textContent=(r&&r.text)||"";o.hidden=false;$("ps").textContent=""}
+catch(e){$("ps").textContent=e.message||"Something went wrong."}$("pg").disabled=false};
+$("tf").onclick=()=>{$("feed").hidden=false;$("press").hidden=true;$("tf").className="on";$("tp").className=""};
+$("tp").onclick=()=>{$("feed").hidden=true;$("press").hidden=false;$("tp").className="on";$("tf").className=""};
+</script></main></body></html>
